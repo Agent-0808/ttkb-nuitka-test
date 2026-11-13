@@ -1,0 +1,98 @@
+name: build executable file
+
+on:
+  push:
+    tags:
+      - 'v*' # Build and publish a Release when pushing a tag starting with v
+  workflow_dispatch: # Manual trigger supported
+
+permissions:
+  contents: write
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          architecture: 'x64'
+          cache: 'pip'
+
+      - name: Setup uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          version: "latest"
+
+      # Export runtime deps only: Nuitka is installed by Nuitka-Action itself, avoiding
+      # version conflicts with the local dev group
+      - name: Install Dependencies
+        run: uv export --no-hashes --no-dev --no-emit-project -o requirements.txt && pip install -r requirements.txt
+
+      - name: Build Executable with Nuitka
+        uses: Nuitka/Nuitka-Action@main
+        with:
+          nuitka-version: main
+          working-directory: src
+          script-name: ttkb_demo
+          mode: onefile
+          python-flag: "-m"
+
+          # Metadata
+          product-name: "ttkbootstrap Nuitka Test"
+          product-version: "0.1.0.0"
+          file-version: "0.1.0.0"
+          file-description: "test"
+          company-name: "Agent-0808"
+
+          clang: true
+          low-memory: true
+          enable-plugins: tk-inter
+          include-package: |
+            ttkbootstrap
+            ttkb_demo
+          include-package-data: |
+            ttkbootstrap
+            ttkb_demo
+          # The demo app's own assets
+          include-data-dir: |
+            ttkb_demo/assets=ttkb_demo/assets
+          windows-console-mode: attach
+          output-dir: ../build
+          output-file: "ttkbootstrap-nuitka-test.exe"
+          assume-yes-for-downloads: true
+
+      # Assemble the publish folder
+      - name: Prepare Release Directory
+        run: |
+          New-Item -ItemType Directory -Path "publish" -Force
+          Copy-Item -Path "build/ttkbootstrap-nuitka-test.exe" -Destination "publish/"
+        shell: powershell
+
+      # Upload Artifact
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ttkbootstrap-nuitka-test-Windows-Build
+          path: publish/
+
+      # Zip for Release (tag-triggered only)
+      - name: Zip Release Asset (When Trigger With Tag)
+        if: startsWith(github.ref, 'refs/tags/')
+        run: |
+          $tag_name = "${{ github.ref_name }}"
+          cd publish
+          Compress-Archive -Path * -DestinationPath "../ttkbootstrap-nuitka-test-$tag_name.zip"
+        shell: powershell
+
+      # Upload Release asset (tag-triggered only)
+      - name: Upload Release Asset (When Trigger With Tag)
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v1
+        with:
+          files: ttkbootstrap-nuitka-test-${{ github.ref_name }}.zip

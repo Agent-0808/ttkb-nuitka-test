@@ -1,0 +1,27 @@
+[project]
+name = "ttkbootstrap-nuitka-test"
+version = "0.1.0"
+description = "Reproduce and debug ttkbootstrap compatibility issues when frozen by Nuitka"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "ttkbootstrap>=2.2.7",
+]
+
+[project.scripts]
+ttkb-demo = "ttkb_demo.__main__:main"
+
+# [dependency-groups]
+# dev = [
+#     # For local Nuitka builds; CI installs Nuitka via Nuitka-Action itself
+#     "nuitka>=2.7",
+#     "ordered-set>=4.1",
+#     "zstandard>=0.23",
+# ]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/ttkb_demo"]

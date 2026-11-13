@@ -1,0 +1,12 @@
+{
+  "name": "ttkbootstrap × Nuitka Compatibility Demo",
+  "version": "0.1.0",
+  "purpose": "Verify that theme switching, the style engine, icon fonts and bundled resources of ttkbootstrap survive Nuitka freezing",
+  "checks": [
+    "Theme switching (theme_use / toggle_theme)",
+    "bootstyle widgets and style building",
+    "ttkbootstrap built-in icons (bootstrap.ttf glyphs)",
+    "Style queries (lookup / theme_settings)",
+    "Reading the app's own assets"
+  ]
+}
